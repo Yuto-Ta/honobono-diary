@@ -36,8 +36,11 @@ DB はダッシュボード（コンソール）で作り、コードのデプ�
 git clone https://github.com/Yuto-Ta/honobono-diary.git
 cd honobono-diary
 pnpm install
-pnpm wrangler login   # ブラウザが開くので「Allow」
+pnpm wrangler login   # ブラウザが開くので「Allow」→ Successfully logged in.
+pnpm wrangler whoami  # ログインしたアカウントのメールが表示される
 ```
+
+> `whoami` のメールが、ダッシュボード左上のアカウントと同じか確認してください。違うと別のアカウントにデプロイされ、ダッシュボードで作った D1 が見つからずエラーになります。その場合は `pnpm wrangler logout` してから、ブラウザで正しいアカウントにログインし直して `login` し直します。
 
 > `pnpm install` 中に esbuild と workerd のインストールスクリプトが動きます（`pnpm-workspace.yaml` で許可済み）。
 
