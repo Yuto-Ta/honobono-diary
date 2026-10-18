@@ -33,7 +33,7 @@ DB はダッシュボード（コンソール）で作り、コードのデプ�
 **1. 取得して依存パッケージを入れる（ターミナル）**
 
 ```bash
-git clone <このリポジトリの URL>
+git clone https://github.com/Yuto-Ta/honobono-diary.git
 cd honobono-diary
 pnpm install
 pnpm wrangler login   # ブラウザが開くので「Allow」
@@ -186,10 +186,25 @@ pnpm run deploy
 
 ## 後片付け
 
+ダッシュボードで、次の順に削除します（Worker に紐づく設定を先に外し、消し漏れを防ぐため）。
+
+1. Tunnel と `pnpm dev` を止める（Ctrl + C）
+2. Access を外す（設定した場合）：Workers & Pages → `honobono-diary` → Access の設定 → Remove Worker-specific Access。Zero Trust → Access controls の Applications・Policies に残っていないかも確認
+3. Turnstile のウィジェットを削除：Application security → Turnstile
+4. Worker を削除：Compute → Workers & Pages → `honobono-diary` → Settings → Delete（登録したシークレットも一緒に消える）
+5. D1 を削除：Storage & databases → D1 SQLite Database → `honobono-db` → Settings → Delete
+6. R2 を削除（使った場合）：R2 Object Storage → `honobono-images` を空にしてから削除
+
+workers.dev のサブドメインは削除不要です（アカウントに1つで、次も使えます）。
+
+<details>
+<summary>Worker・D1・R2 を CLI で削除する場合</summary>
+
 ```bash
-pnpm wrangler delete                       # Worker を削除
-pnpm wrangler d1 delete honobono-db        # D1 を削除
-pnpm wrangler r2 bucket delete honobono-images   # R2 を使った場合
+pnpm wrangler delete                             # Worker
+pnpm wrangler d1 delete honobono-db              # D1
+pnpm wrangler r2 bucket delete honobono-images   # R2
 ```
 
-Turnstile のウィジェットと Access の設定は、ダッシュボードから削除します。
+Turnstile と Access はダッシュボードで削除してください。
+</details>
