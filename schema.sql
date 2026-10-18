@@ -1,8 +1,7 @@
 -- ほのぼの日記のテーブル
 -- 画像は D1 に直接保存する（image）。R2 を使う場合は image_key にオブジェクトのキーが入る
-DROP TABLE IF EXISTS posts;
-
-CREATE TABLE posts (
+-- IF NOT EXISTS：誤って2回実行しても既存の日記を消さないため
+CREATE TABLE IF NOT EXISTS posts (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   title      TEXT NOT NULL,
   body       TEXT NOT NULL,
