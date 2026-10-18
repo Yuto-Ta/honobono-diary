@@ -62,6 +62,15 @@ pnpm run deploy
 
 > `pnpm deploy` は pnpm 自身の別コマンドなので、必ず `pnpm run deploy` と打ってください。
 
+**4. Bot のふりをして投稿してみる（ターミナル）**
+
+```bash
+# ブラウザを使わずに直接投稿する
+curl -F title=bot -F body=bot https://honobono-diary.<あなたのサブドメイン>.workers.dev/posts
+```
+
+画面には何も出ませんが、ブラウザを更新すると「bot」の日記が増えています。Bot から投稿し放題の状態です。②で Turnstile を入れたあと、同じコマンドが弾かれることを確かめます。
+
 <details>
 <summary>手順2を CLI で行う場合</summary>
 
@@ -106,6 +115,8 @@ pnpm run deploy
 curl -i -F title=bot -F body=bot https://honobono-diary.<あなたのサブドメイン>.workers.dev/posts
 #  → Location: /?error=Bot%20... となり、投稿されなければ成功
 ```
+
+①の手順4では書き込めたコマンドが、コードを変えずに設定だけで弾かれるようになります。
 
 > サイトキーだけ設定してシークレットキーを登録し忘れると、「Bot 対策（Turnstile）の設定が完了していないため、投稿できません。」と表示されて投稿できません。画面には Turnstile が出ているのに守られていない、という状態を防ぐためです。
 
