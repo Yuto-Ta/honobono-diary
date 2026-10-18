@@ -43,7 +43,7 @@ pnpm wrangler login   # ブラウザが開くので「Allow」
 
 **2. D1 データベースを作る（ダッシュボード）**
 
-1. Storage & databases → **D1 SQLite Database** → Create。名前は `honobono-db`
+1. Storage & databases → **D1 SQLite Database** → Create。名前は `honobono-db`、Data location は既定（Location）のまま
 2. Overview に表示されたデータベース ID を横のコピーボタンでコピーし、`wrangler.jsonc` の `REPLACE_WITH_YOUR_DATABASE_ID` と置き換えて保存
 3. **Console** タブに `schema.sql` の中身を貼って実行（3文まとめて実行できます）
 4. 右上の **Explore Data** を押すと Studio が開きます。`posts` テーブルに「はじめての日記」が1件見えれば OK
