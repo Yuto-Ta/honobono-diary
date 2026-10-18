@@ -173,15 +173,17 @@ D1 は1行あたりのサイズに上限があるため、本アプリは画像�
 
 > R2 は無料枠でも、事前に支払い方法の登録が必要です。
 
-```bash
-# 1. バケットを作る
-pnpm wrangler r2 bucket create honobono-images
+1. ダッシュボードの Storage & databases → **R2 Object Storage** → Create bucket
+   - Bucket name：`honobono-images`（後から変更できません）
+   - Location は Automatic、Default Storage Class は Standard のまま
+   - バケットは非公開のままで構いません（画像は Worker がバインディング経由で読み出します）
+2. `wrangler.jsonc` の `r2_buckets` のコメントを外す（binding は `IMAGES`）
+3. デプロイ（出力に `env.IMAGES (honobono-images)` が出れば OK）
+   ```bash
+   pnpm run deploy
+   ```
 
-# 2. wrangler.jsonc の r2_buckets のコメントを外す（binding は IMAGES）
-
-# 3. デプロイ
-pnpm run deploy
-```
+CLI でバケットを作る場合は `pnpm wrangler r2 bucket create honobono-images` です。
 
 - コードの変更は不要です。`env.IMAGES` がバインドされていれば、新しい画像は R2 に保存されます
 - それまでに D1 に保存した画像も、引き続き表示されます
