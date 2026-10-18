@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "honobono-diary",
+  "main": "src/index.js",
+  "compatibility_date": "2026-06-01",
+
+  // ① D1：ダッシュボードで作った honobono-db のデータベース ID に書き換える
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "honobono-db",
+      "database_id": "REPLACE_WITH_YOUR_DATABASE_ID"
+    }
+  ],
+
+  // ② Turnstile：ダッシュボードで作ったウィジェットのサイトキーを "" の中に貼る
+  //    シークレットキーはダッシュボードの Worker の設定で「シークレット」として登録する
+  //    （空のままなら Turnstile は表示されない）
+  "vars": {
+    "TURNSTILE_SITE_KEY": ""
+  }
+
+  // ③ R2（講師デモ・付録）：画像を R2 に保存したいときはコメントを外す
+  // ,"r2_buckets": [
+  //   { "binding": "IMAGES", "bucket_name": "honobono-images" }
+  // ]
+}

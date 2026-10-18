@@ -1,0 +1,5 @@
+# pnpm 10 は依存パッケージのインストールスクリプトを既定で止めるため、
+# wrangler の動作に必要な esbuild と workerd（ローカル実行環境）だけ許可する
+onlyBuiltDependencies:
+  - esbuild
+  - workerd

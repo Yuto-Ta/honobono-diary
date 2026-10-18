@@ -1,0 +1,22 @@
+{
+  "name": "honobono-diary",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare 勉強会用サンプル：ほのぼの日記（Workers + D1）",
+  "packageManager": "pnpm@10.28.2",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "wrangler dev --var TURNSTILE_SITE_KEY:1x00000000000000000000AA --var TURNSTILE_SECRET_KEY:1x0000000000000000000000000000000AA",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute honobono-db --remote --file=schema.sql",
+    "db:init:local": "wrangler d1 execute honobono-db --local --file=schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.150.0"
+  },
+  "dependencies": {
+    "hono": "^4.13.13"
+  }
+}
