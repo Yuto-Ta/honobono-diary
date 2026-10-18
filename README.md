@@ -114,6 +114,8 @@ pnpm run deploy
 
 サイトキーを貼っただけでは反映されません。デプロイすると、投稿フォームに Turnstile が表示されます。
 
+> デプロイ時に「The local configuration ... differs from the remote configuration of your Worker set via the Cloudflare Dashboard」と聞かれたら **Y** で進めます。ダッシュボードでシークレットを登録したため、手元の `wrangler.jsonc` で上書きしてよいかを確認しているだけです。Secret として登録したシークレットキーは上書きされません。
+
 **4. 動作確認**
 
 ```bash
