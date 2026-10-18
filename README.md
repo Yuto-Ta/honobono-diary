@@ -12,18 +12,18 @@ Cloudflare 勉強会用のサンプルアプリです。タイトル・本文・
 | 必要なもの | 確認コマンド |
 |---|---|
 | Cloudflare の無料アカウント | https://dash.cloudflare.com/sign-up |
-| workers.dev のサブドメイン | ダッシュボードの Compute → Workers & Pages で登録（下記） |
+| workers.dev のサブドメイン名 | 名前だけ決めておく（登録は最初のデプロイ時、下記） |
 | Node.js 20 以上 | `node --version` |
 | pnpm | `pnpm --version`（無ければ `npm install -g pnpm`） |
 | git | `git --version` |
 | cloudflared（ハンズオン③で使用） | `cloudflared --version` |
 
-### workers.dev のサブドメインは前日までに登録する
+### workers.dev のサブドメイン
 
-アカウントごとに1つ、`https://<名前>.workers.dev` の名前を登録します。**登録してから数分間は SSL 証明書の準備中でアクセスできない**ため、当日ではなく事前に済ませてください。
+アカウントごとに1つ、`https://<名前>.workers.dev` の名前を登録します。最初の `pnpm run deploy` で「Would you like to register a workers.dev subdomain now?」と聞かれるので、Y を押して名前を入れます。
 
 - 名前は公開 URL に出ます。会社名・クライアント名・フルネームは避けてください（例：`my-cf-study`）
-- 未登録のままデプロイすると「Would you like to register a workers.dev subdomain now?」と聞かれます。Y を押して名前を入れれば登録できます
+- **登録してから数分間は SSL 証明書の準備中でアクセスできません**（ブラウザでは SSL エラー）。少し待てばつながります
 - 後から変更できます
 
 ## ① デプロイする
@@ -36,28 +36,46 @@ DB はダッシュボード（コンソール）で作り、コードのデプ�
 git clone https://github.com/Yuto-Ta/honobono-diary.git
 cd honobono-diary
 pnpm install
-pnpm wrangler login   # ブラウザが開くので「Allow」
+pnpm wrangler login   # ブラウザが開くので「Allow」→ Successfully logged in.
+pnpm wrangler whoami  # ログインしたアカウントのメールが表示される
 ```
+
+> `whoami` のメールが、ダッシュボード左上のアカウントと同じか確認してください。違うと別のアカウントにデプロイされ、ダッシュボードで作った D1 が見つからずエラーになります。その場合は `pnpm wrangler logout` してから、ブラウザで正しいアカウントにログインし直して `login` し直します。
 
 > `pnpm install` 中に esbuild と workerd のインストールスクリプトが動きます（`pnpm-workspace.yaml` で許可済み）。
 
 **2. D1 データベースを作る（ダッシュボード）**
 
-1. Storage & databases → **D1 SQLite Database** → Create。名前は `honobono-db`
+1. Storage & databases → **D1 SQLite Database** → Create。名前は `honobono-db`、Data location は既定（Location）のまま
 2. Overview に表示されたデータベース ID を横のコピーボタンでコピーし、`wrangler.jsonc` の `REPLACE_WITH_YOUR_DATABASE_ID` と置き換えて保存
-3. **Console** タブに `schema.sql` の中身を貼って実行（3文まとめて実行できます）
-4. 右上の **Explore Data** を押すと Studio が開きます。`posts` テーブルに「はじめての日記」が1件見えれば OK
+3. 右上の **Explore Data** を押して Studio を開き、Query に `schema.sql` の中身を貼る
+4. Run の右の **▼ → Run all in sequence** で実行（Shift + Cmd + Enter でも可）。Run をそのまま押すと、カーソルがある1文しか実行されません
+5. 左の一覧の更新ボタン（🔄）を押して `posts` を開き、「はじめての日記」が1件見えれば OK
+
+> Overview の横の **Console** タブに貼って実行しても、2文まとめて実行できます。
 
 **3. デプロイ（ターミナル）**
 
 ```bash
 pnpm run deploy
+#  → 初回はサブドメインの登録を聞かれる（Y → 名前を入力）
 #  → https://honobono-diary.<あなたのサブドメイン>.workers.dev が表示される
 ```
+
+サブドメインを登録した直後は、数分つながりません。その間に、ダッシュボードの Compute → Workers & Pages に `honobono-diary` が表示されていることを確認してください。
 
 日記を投稿したら、Studio を更新して行が増えることも確認してみてください。
 
 > `pnpm deploy` は pnpm 自身の別コマンドなので、必ず `pnpm run deploy` と打ってください。
+
+**4. Bot のふりをして投稿してみる（ターミナル）**
+
+```bash
+# ブラウザを使わずに直接投稿する
+curl -F title=bot -F body=bot https://honobono-diary.<あなたのサブドメイン>.workers.dev/posts
+```
+
+画面には何も出ませんが、ブラウザを更新すると「bot」の日記が増えています。Bot から投稿し放題の状態です。②で Turnstile を入れたあと、同じコマンドが弾かれることを確かめます。
 
 <details>
 <summary>手順2を CLI で行う場合</summary>
@@ -96,6 +114,8 @@ pnpm run deploy
 
 サイトキーを貼っただけでは反映されません。デプロイすると、投稿フォームに Turnstile が表示されます。
 
+> デプロイ時に「The local configuration ... differs from the remote configuration of your Worker set via the Cloudflare Dashboard」と聞かれたら **Y** で進めます。ダッシュボードでシークレットを登録したため、手元の `wrangler.jsonc` で上書きしてよいかを確認しているだけです。Secret として登録したシークレットキーは上書きされません。
+
 **4. 動作確認**
 
 ```bash
@@ -103,6 +123,8 @@ pnpm run deploy
 curl -i -F title=bot -F body=bot https://honobono-diary.<あなたのサブドメイン>.workers.dev/posts
 #  → Location: /?error=Bot%20... となり、投稿されなければ成功
 ```
+
+①の手順4では書き込めたコマンドが、コードを変えずに設定だけで弾かれるようになります。
 
 > サイトキーだけ設定してシークレットキーを登録し忘れると、「Bot 対策（Turnstile）の設定が完了していないため、投稿できません。」と表示されて投稿できません。画面には Turnstile が出ているのに守られていない、という状態を防ぐためです。
 
@@ -151,15 +173,17 @@ D1 は1行あたりのサイズに上限があるため、本アプリは画像�
 
 > R2 は無料枠でも、事前に支払い方法の登録が必要です。
 
-```bash
-# 1. バケットを作る
-pnpm wrangler r2 bucket create honobono-images
+1. ダッシュボードの Storage & databases → **R2 Object Storage** → Create bucket
+   - Bucket name：`honobono-images`（後から変更できません）
+   - Location は Automatic、Default Storage Class は Standard のまま
+   - バケットは非公開のままで構いません（画像は Worker がバインディング経由で読み出します）
+2. `wrangler.jsonc` の `r2_buckets` のコメントを外す（binding は `IMAGES`）
+3. デプロイ（出力に `env.IMAGES (honobono-images)` が出れば OK）
+   ```bash
+   pnpm run deploy
+   ```
 
-# 2. wrangler.jsonc の r2_buckets のコメントを外す（binding は IMAGES）
-
-# 3. デプロイ
-pnpm run deploy
-```
+CLI でバケットを作る場合は `pnpm wrangler r2 bucket create honobono-images` です。
 
 - コードの変更は不要です。`env.IMAGES` がバインドされていれば、新しい画像は R2 に保存されます
 - それまでに D1 に保存した画像も、引き続き表示されます
