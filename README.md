@@ -12,18 +12,18 @@ Cloudflare 勉強会用のサンプルアプリです。タイトル・本文・
 | 必要なもの | 確認コマンド |
 |---|---|
 | Cloudflare の無料アカウント | https://dash.cloudflare.com/sign-up |
-| workers.dev のサブドメイン | ダッシュボードの Compute → Workers & Pages で登録（下記） |
+| workers.dev のサブドメイン名 | 名前だけ決めておく（登録は最初のデプロイ時、下記） |
 | Node.js 20 以上 | `node --version` |
 | pnpm | `pnpm --version`（無ければ `npm install -g pnpm`） |
 | git | `git --version` |
 | cloudflared（ハンズオン③で使用） | `cloudflared --version` |
 
-### workers.dev のサブドメインは前日までに登録する
+### workers.dev のサブドメイン
 
-アカウントごとに1つ、`https://<名前>.workers.dev` の名前を登録します。**登録してから数分間は SSL 証明書の準備中でアクセスできない**ため、当日ではなく事前に済ませてください。
+アカウントごとに1つ、`https://<名前>.workers.dev` の名前を登録します。最初の `pnpm run deploy` で「Would you like to register a workers.dev subdomain now?」と聞かれるので、Y を押して名前を入れます。
 
 - 名前は公開 URL に出ます。会社名・クライアント名・フルネームは避けてください（例：`my-cf-study`）
-- 未登録のままデプロイすると「Would you like to register a workers.dev subdomain now?」と聞かれます。Y を押して名前を入れれば登録できます
+- **登録してから数分間は SSL 証明書の準備中でアクセスできません**（ブラウザでは SSL エラー）。少し待てばつながります
 - 後から変更できます
 
 ## ① デプロイする
@@ -52,8 +52,11 @@ pnpm wrangler login   # ブラウザが開くので「Allow」
 
 ```bash
 pnpm run deploy
+#  → 初回はサブドメインの登録を聞かれる（Y → 名前を入力）
 #  → https://honobono-diary.<あなたのサブドメイン>.workers.dev が表示される
 ```
+
+サブドメインを登録した直後は、数分つながりません。その間に、ダッシュボードの Compute → Workers & Pages に `honobono-diary` が表示されていることを確認してください。
 
 日記を投稿したら、Studio を更新して行が増えることも確認してみてください。
 
