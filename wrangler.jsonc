@@ -1,5 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
+
+  // ===== 公開サイト（pnpm run deploy）=====
+  // 誰でも日記を読めて、コメントできる
   "name": "honobono-diary",
   "main": "src/index.js",
   "compatibility_date": "2026-06-01",
@@ -18,10 +21,44 @@
   //    （空のままなら Turnstile は表示されない）
   "vars": {
     "TURNSTILE_SITE_KEY": ""
-  }
+  },
 
-  // ③ R2（講師デモ・付録）：画像を R2 に保存したいときはコメントを外す
-  // ,"r2_buckets": [
+  // ③ R2（カード登録した人）：画像を R2 に保存するときはコメントを外す。管理画面側（下）も同じように外す
+  // "r2_buckets": [
   //   { "binding": "IMAGES", "bucket_name": "honobono-images" }
-  // ]
+  // ],
+
+  "env": {
+    // ===== 管理画面（pnpm run deploy:admin）=====
+    // honobono-diary-admin という別の Worker になる。Access は Worker 単位でかかるため分けている
+    // ここに書く設定は上から引き継がれないので、D1 と R2 は同じものをもう一度書く
+    "admin": {
+      "name": "honobono-diary-admin",
+
+      // ① 公開サイトと同じデータベース ID を貼る（同じ DB を2つの Worker で共有する）
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "honobono-db",
+          "database_id": "REPLACE_WITH_YOUR_DATABASE_ID"
+        }
+      ],
+
+      // ③ R2：公開サイトと同じバケットを書く（使う人はコメントを外す）
+      // "r2_buckets": [
+      //   { "binding": "IMAGES", "bucket_name": "honobono-images" }
+      // ],
+
+      // ④ 管理画面の認証
+      //    Access を使う人：ACCESS_TEAM_DOMAIN と ACCESS_AUD に、Access の設定画面の値を貼る
+      //    Access を使わない人：ここは空のまま、シークレット ADMIN_PASSWORD を登録する（Basic 認証）
+      //    TURNSTILE_SITE_KEY は管理画面では使わない（空のままでよい）
+      "vars": {
+        "APP_MODE": "admin",
+        "ACCESS_TEAM_DOMAIN": "",
+        "ACCESS_AUD": "",
+        "TURNSTILE_SITE_KEY": ""
+      }
+    }
+  }
 }
