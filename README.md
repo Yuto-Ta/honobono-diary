@@ -156,11 +156,12 @@ curl -F name=bot -F body=bot https://honobono-diary.<あなたのサブドメイ
 
 **2. ウィジェットを作る（ダッシュボード）**
 
-1. Application security → **Turnstile** → Add widget
-2. Widget name：`honobono-diary`
-3. Hostnames：`honobono-diary.<あなたのサブドメイン>.workers.dev` を**最後まで入力して Enter**（「No results」と出ても追加できます）
-4. Widget Mode：Managed（Recommended）のまま作成
-5. **サイトキー**（公開してよい）と**シークレットキー**（秘密）が表示される
+1. Application security → **Turnstile** → **Set up with Spin**
+2. Domains：公開サイトの `honobono-diary.<あなたのサブドメイン>.workers.dev` を入力して Enter（管理画面のほうではありません）。Widget name は自動で入り、`localhost` と `127.0.0.1` も自動で追加されます
+3. **Set up** を押す
+4. **サイトキー**（公開してよい）と**シークレットキー**（秘密）が表示されるので控える
+
+> 一緒に AI のコーディングエージェント向けのプロンプトも表示されますが、**使いません**。ほのぼの日記にはすでに Turnstile が組み込まれているため（`src/views.js` のウィジェットと `src/index.js` のサーバー側の検証）、エージェントに渡すとコードを二重に書き換えてしまいます。
 
 **3. キーをアプリに設定する**
 
