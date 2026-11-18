@@ -2,14 +2,15 @@
   "name": "honobono-diary",
   "version": "1.0.0",
   "private": true,
-  "description": "Cloudflare 勉強会用サンプル：ほのぼの日記（Workers + D1）",
+  "description": "Cloudflare 勉強会用サンプル：ほのぼの日記（Workers + D1 + R2 + Turnstile + Access）",
   "packageManager": "pnpm@10.28.2",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "dev": "wrangler dev --var TURNSTILE_SITE_KEY:1x00000000000000000000AA --var TURNSTILE_SECRET_KEY:1x0000000000000000000000000000000AA",
-    "deploy": "wrangler deploy",
+    "dev": "wrangler dev --var APP_MODE:local --var ADMIN_PASSWORD:local-dev-only-password --var TURNSTILE_SITE_KEY:1x00000000000000000000AA --var TURNSTILE_SECRET_KEY:1x0000000000000000000000000000000AA",
+    "deploy": "wrangler deploy --env=",
+    "deploy:admin": "wrangler deploy --env admin",
     "db:init": "wrangler d1 execute honobono-db --remote --file=schema.sql",
     "db:init:local": "wrangler d1 execute honobono-db --local --file=schema.sql"
   },
