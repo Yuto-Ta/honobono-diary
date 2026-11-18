@@ -49,13 +49,13 @@
       //   { "binding": "IMAGES", "bucket_name": "honobono-images" }
       // ],
 
-      // ④ 管理画面の認証
-      //    Access を使う人：ACCESS_TEAM_DOMAIN と ACCESS_AUD に、Access の設定画面の値を貼る
-      //    Access を使わない人：ここは空のまま、シークレット ADMIN_PASSWORD を登録する（Basic 認証）
+      // ④ 管理画面の認証（Access）
+      //    Worker の Access タブの「Application values」にある JWKS と AUD を、そのまま貼る
+      //    空のままだと管理画面は開かない（503）
       //    TURNSTILE_SITE_KEY は管理画面では使わない（空のままでよい）
       "vars": {
         "APP_MODE": "admin",
-        "ACCESS_TEAM_DOMAIN": "",
+        "ACCESS_JWKS_URL": "",
         "ACCESS_AUD": "",
         "TURNSTILE_SITE_KEY": ""
       }
