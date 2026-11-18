@@ -1,18 +1,18 @@
 // 管理画面の認証。設定に応じて次のどれかになる
-//   1. Cloudflare Access … ACCESS_TEAM_DOMAIN と ACCESS_AUD を設定（カード登録が必要）
-//   2. Basic 認証        … シークレット ADMIN_PASSWORD を登録（カード不要の代替）
+//   1. Cloudflare Access … ACCESS_JWKS_URL と ACCESS_AUD を設定（カード登録が必要）
+//   2. Basic 認証        … ADMIN_PASSWORD を設定（手元で動かすとき＝pnpm dev はこれ）
 //   3. どちらも未設定     … 管理画面を開かない（503）
 import { basicAuth } from "hono/basic-auth";
 import { MIN_ADMIN_PASSWORD } from "./config.js";
 
 export async function adminAuth(c, next) {
-  const team = c.env.ACCESS_TEAM_DOMAIN;
+  const jwksUrl = c.env.ACCESS_JWKS_URL;
   const aud = c.env.ACCESS_AUD;
 
-  if (team || aud) {
-    const teamDomain = normalizeTeamDomain(team);
+  if (jwksUrl || aud) {
+    const teamDomain = teamDomainFromJwksUrl(jwksUrl);
     if (!teamDomain || !aud) {
-      console.error("ACCESS_TEAM_DOMAIN と ACCESS_AUD の両方を正しく設定してください", { team, hasAud: Boolean(aud) });
+      console.error("ACCESS_JWKS_URL と ACCESS_AUD の両方を正しく設定してください", { jwksUrl, hasAud: Boolean(aud) });
       return c.text("管理画面の認証設定（Access）が不完全です。README の手順を確認してください。", 503);
     }
     // Access を通ったリクエストには、Access が署名した JWT が付く。
@@ -41,13 +41,15 @@ export async function adminAuth(c, next) {
     })(c, next);
   }
 
-  return c.text("管理画面の認証が設定されていません。README の手順で Access か ADMIN_PASSWORD を設定してください。", 503);
+  return c.text("管理画面の認証が設定されていません。README の手順で Access を設定してください。", 503);
 }
 
-// "myteam.cloudflareaccess.com" と "https://myteam.cloudflareaccess.com/" のどちらで書いても受け付ける
-function normalizeTeamDomain(value) {
+// ダッシュボードの JWKS（https://<チーム>.cloudflareaccess.com/cdn-cgi/access/certs）をそのまま貼れるようにし、
+// そこからチームドメインを取り出す。発行元（iss）の確認と公開鍵の取得に使う。
+// 末尾の /cdn-cgi/access/certs や / が無い形、https:// が無い形でも受け付ける
+function teamDomainFromJwksUrl(value) {
   if (!value) return null;
-  const v = String(value).trim().replace(/\/+$/, "");
+  const v = String(value).trim().replace(/\/+$/, "").replace(/\/cdn-cgi\/access\/certs$/i, "");
   const withScheme = v.startsWith("https://") ? v : `https://${v}`;
   return /^https:\/\/[a-z0-9-]+\.cloudflareaccess\.com$/i.test(withScheme) ? withScheme.toLowerCase() : null;
 }

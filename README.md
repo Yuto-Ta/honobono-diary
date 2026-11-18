@@ -8,7 +8,7 @@ Cloudflare 勉強会用のサンプルアプリです。管理画面から日記
 | **D1** | 日記とコメントを保存する SQL データベース |
 | **R2** | 画像の保存先（S3 互換のストレージ）。使わない場合は画像も D1 に保存する |
 | **Turnstile** | コメント欄を Bot から守る |
-| **Access** | 管理画面にログインを付ける。使わない場合は Basic 認証で代用する |
+| **Access** | 管理画面にログインを付ける（手元で動かすときは Basic 認証） |
 
 ## 構成
 
@@ -18,19 +18,20 @@ Cloudflare 勉強会用のサンプルアプリです。管理画面から日記
 誰でも ──▶ honobono-diary（公開サイト）      ──┐
            一覧・詳細・コメント（Turnstile）    ├──▶ D1（日記・コメント）／ R2（画像）
 管理者 ──▶ honobono-diary-admin（管理画面）  ──┘
-           Access または Basic 認証で保護
+           Access で保護
 ```
 
 Access は Worker（ホスト名）単位でかかるため、管理画面を別の Worker に分けています。管理画面を別のホスト名に分けるのは、実務でもよく使う構成です。
 
-## 2つのコース
+## カード登録について
 
-R2 と Access（Zero Trust）は、無料枠の範囲でも**支払い方法（カードなど）の登録が必要**です。登録しない人は代わりの方法で同じ流れを体験できます。コードは同じで、設定だけが違います。
+R2 と Access（Zero Trust）は、無料枠の範囲でも**支払い方法（カードなど）の登録が必要**です。
 
-| | A：カード登録する | B：カード登録しない |
+| | カードを登録した人 | 登録していない人 |
 |---|---|---|
-| 管理画面のログイン | Cloudflare Access | Basic 認証（パスワード） |
-| 画像の保存先 | R2 | D1（1枚 1MB まで） |
+| ① 公開サイト（Workers・D1） | 自分で | 自分で |
+| ② 管理画面（Access・R2） | 自分で | 講師の画面を見る |
+| ③ コメント欄（Turnstile） | 自分で | 自分で |
 
 ## 事前準備
 
@@ -41,7 +42,7 @@ R2 と Access（Zero Trust）は、無料枠の範囲でも**支払い方法（�
 | Node.js 20 以上 | `node --version` |
 | pnpm | `pnpm --version`（無ければ `npm install -g pnpm`） |
 | git | `git --version` |
-| （A コースのみ）支払い方法の登録 | ダッシュボードの Billing |
+| （② を自分でやる人）支払い方法の登録 | ダッシュボードの Billing |
 
 ### workers.dev のサブドメイン
 
@@ -65,14 +66,17 @@ pnpm wrangler whoami  # ログインしたアカウントのメールが表示�
 > `whoami` のメールが、ダッシュボード左上のアカウントと同じか確認してください。違うと別のアカウントにデプロイされます。その場合は `pnpm wrangler logout` してから、正しいアカウントで `login` し直します。
 
 > 前回 clone した人は、`git pull` で最新にしてください。
+>
+> 「Your local changes to the following files would be overwritten by merge: wrangler.jsonc」で止まったら、前回貼ったデータベース ID が原因です。`git diff wrangler.jsonc` で `database_id` の値を控えてから、`git restore wrangler.jsonc && git pull` で最新にし、次の手順 2 で ID を貼り直してください（ID はダッシュボードでも確認できます）。
 
 **2. D1 データベースを作る（ダッシュボード）**
 
 1. Storage & databases → **D1 SQLite Database** → Create。名前は `honobono-db`、Data location は既定のまま
-2. Overview に表示されたデータベース ID をコピーし、`wrangler.jsonc` の `REPLACE_WITH_YOUR_DATABASE_ID` **2か所**（公開サイト用と管理画面用）と置き換えて保存
-3. 右上の **Explore Data** で Studio を開き、Query に `schema.sql` の中身を貼る
-4. Run の右の **▼ → Run all in sequence** で実行。Run をそのまま押すと、カーソルがある1文しか実行されません
-5. 左の一覧の更新ボタン（🔄）を押して、`posts` と `comments` の2つのテーブルがあれば OK
+2. 一覧で `honobono-db` をクリックし、Overview に表示されたデータベース ID をコピーする。`wrangler.jsonc` の `REPLACE_WITH_YOUR_DATABASE_ID` **2か所**（公開サイト用と管理画面用）と置き換えて保存
+3. 同じ `honobono-db` の画面の右上にある **Explore Data** で Studio を開く
+4. ターミナルで `pbcopy < schema.sql` を実行して `schema.sql` の中身をコピーし、Studio の Query の欄で ⌘V
+5. Run の右の **▼ → Run all in sequence** で実行。Run をそのまま押すと、カーソルがある1文しか実行されません
+6. 左の一覧の更新ボタン（🔄）を押して、`posts` と `comments` があれば OK。`sqlite_sequence` も表示されますが、SQLite が連番（AUTOINCREMENT）の管理に自動で作るものなので気にしなくて大丈夫です
 
 > 前回作った `honobono-db` が残っている人は、作り直さずに `schema.sql` をもう一度実行すれば `comments` テーブルが増えます（既存の日記は消えません）。
 
@@ -99,51 +103,31 @@ pnpm run deploy:admin
 
 この時点で開くと「管理画面の認証が設定されていません」と表示されます。**ログインの仕組みを設定するまでは、誰も管理画面を使えない**ようにしてあります。
 
-**2. ログインを付ける**（A・B のどちらか）
+**2. Access でログインを付ける**
 
-<details open>
-<summary><b>A：Cloudflare Access</b></summary>
-
-1. 左メニューの **Zero Trust** → 初期設定（Free プランを選択。チーム名は自動で付き、後から変更できる）
-2. Compute → Workers & Pages → **`honobono-diary-admin`**（公開サイトではなく管理画面の方）で Access の設定を開く（Manage Worker access）
+1. 左メニューの **Zero Trust** → **Overview** で初期設定（支払い方法の登録を求められます。チーム名は自動で付きます）
+2. Compute → Workers & Pages → **`honobono-diary-admin`**（公開サイトではなく管理画面の方）→ **Access** タブ
 3. Scope：**All traffic**（既定の Previews only では本番の URL が守られない）
-4. Authentication policy：例）Emails = 自分のメールアドレス → Allow
-5. Apply Access
-6. 設定画面に表示される2つの値を `wrangler.jsonc` の管理画面側（`env.admin.vars`）に貼る
-   - チームドメイン（`https://<チーム名>.cloudflareaccess.com`）→ `ACCESS_TEAM_DOMAIN`
-   - AUD（Application Audience タグ）→ `ACCESS_AUD`
-7. もう一度デプロイ：`pnpm run deploy:admin`
-8. シークレットウィンドウで管理画面の URL を開く → メールに届くコードでログイン → 右上に「ログイン中：（メールアドレス）」
+4. Authentication policy：Add policy → **Cloudflare account**（この Cloudflare アカウントのメンバー＝自分だけが入れる）
+5. 保存すると、同じページの **Application values** に値が表示される。そのうち2つを `wrangler.jsonc` の管理画面側（`env.admin.vars`）にそのまま貼る
+   - **JWKS**（`https://<チーム名>.cloudflareaccess.com/cdn-cgi/access/certs`）→ `ACCESS_JWKS_URL`
+   - **AUD**（長い英数字）→ `ACCESS_AUD`
+6. もう一度デプロイ：`pnpm run deploy:admin`
+7. シークレットウィンドウで管理画面の URL を開く → Cloudflare のログイン画面でログイン → 右上に「ログイン中：（メールアドレス）」
 
-> 値の場所がわからないとき：チームドメインは Zero Trust → Settings、AUD は Zero Trust → Access controls → Applications → 対象のアプリの Overview にも表示されます。
+> AUD は Zero Trust → Access controls → Applications → 対象のアプリでも確認できます。
+>
+> Zero Trust の Settings でチーム名（`<チーム名>.cloudflareaccess.com`）を変えると、JWKS も変わります。変えた場合は貼り直して再デプロイしてください。
 
-**なぜ値を貼るのか**：Access を通ったリクエストには、Access が署名した JWT（`Cf-Access-Jwt-Assertion` ヘッダー）が付きます。Worker はこの署名を Access の公開鍵で確かめてから「ログイン済み」と判断します（`src/auth.js`）。ヘッダーはだれでも偽装できるので、署名を確かめずに信用してはいけません。
+**なぜ値を貼るのか**：Access を通ったリクエストには、Access が署名した JWT（`Cf-Access-Jwt-Assertion` ヘッダー）が付きます。Worker は JWKS（Access の公開鍵の置き場所）から鍵を取ってきて署名を確かめ、発行元と宛先（AUD）も確認してから「ログイン済み」と判断します（`src/auth.js`）。ヘッダーはだれでも偽装できるので、署名を確かめずに信用してはいけません。
 
-</details>
-
-<details>
-<summary><b>B：Basic 認証（カード登録しない人）</b></summary>
-
-1. パスワードをシークレットとして登録（12文字以上）
-
-   ```bash
-   pnpm wrangler secret put ADMIN_PASSWORD --env admin
-   #  → パスワードを入力（画面には表示されない）
-   ```
-
-2. 管理画面の URL を開く → ブラウザのダイアログでユーザー名 `admin` と、登録したパスワードを入力
-
-シークレットは登録した時点で反映されるので、再デプロイは不要です。
-
-**Access との違い**：Basic 認証は「パスワードを知っている人は誰でも入れる」仕組みです。パスワードの共有・漏えい、総当たり攻撃、退職者の締め出し、ログイン履歴を、すべて自分で面倒を見る必要があります。Access ならこれらを Cloudflare 側（会社の Google アカウントや多要素認証との連携も含む）に任せられます。
-
-</details>
+**パスワード（Basic 認証）との違い**：Basic 認証は「パスワードを知っている人は誰でも入れる」仕組みです。パスワードの共有・漏えい、総当たり攻撃、退職者の締め出し、ログイン履歴を、すべて自分で面倒を見る必要があります。Access ならこれらを Cloudflare 側（会社の Google アカウントや多要素認証との連携も含む）に任せられます。
 
 **3. 日記を書く**
 
 管理画面で「＋ 新しい日記を書く」→ タイトル・本文・画像を入れて「公開する」。公開サイトを開き直すと、一覧に出てきます。編集・削除も管理画面から行えます。
 
-**4.（A コース）画像の保存先を R2 にする**
+**4. 画像の保存先を R2 にする**
 
 1. ダッシュボードの Storage & databases → **R2 Object Storage** → Create bucket
    - Bucket name：`honobono-images`（後から変更できません）
@@ -263,11 +247,11 @@ Bot と判定されて弾かれる様子を確実に見せたいときは、公�
 ダッシュボードで、次の順に削除します（Worker に紐づく設定を先に外し、消し漏れを防ぐため）。
 
 1. `pnpm dev`・Tunnel を止める（Ctrl + C）
-2. Access を外す（A コース）：Workers & Pages → `honobono-diary-admin` → Access の設定 → Remove。Zero Trust → Access controls の Applications・Policies に残っていないかも確認
+2. Access を外す：Workers & Pages → `honobono-diary-admin` → Access タブ → Remove。Zero Trust → Access controls の Applications・Policies に残っていないかも確認
 3. Turnstile のウィジェットを削除：Application security → Turnstile
 4. Worker を2つとも削除：Compute → Workers & Pages → `honobono-diary` と `honobono-diary-admin` → Settings → Delete（登録したシークレットも一緒に消える）
 5. D1 を削除：Storage & databases → D1 SQLite Database → `honobono-db` → Settings → Delete
-6. R2 を削除（A コース）：R2 Object Storage → `honobono-images` を空にしてから削除
+6. R2 を削除：R2 Object Storage → `honobono-images` を空にしてから削除
 
 workers.dev のサブドメインは削除不要です（アカウントに1つで、次も使えます）。
 
