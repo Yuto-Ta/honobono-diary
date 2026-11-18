@@ -42,7 +42,8 @@ R2 と Access（Zero Trust）は、無料枠の範囲でも**支払い方法（�
 | Node.js 20 以上 | `node --version` |
 | pnpm | `pnpm --version`（無ければ `npm install -g pnpm`） |
 | git | `git --version` |
-| （② を自分でやる人）支払い方法の登録 | ダッシュボードの Billing |
+| （② を自分でやる人）支払い方法の登録 | Manage Account → Billing |
+| （② を自分でやる人）Zero Trust の初期設定 | 左メニューの Zero Trust → Overview。チーム名は自動のまま、プランは Free |
 
 ### workers.dev のサブドメイン
 
@@ -105,7 +106,7 @@ pnpm run deploy:admin
 
 **2. Access でログインを付ける**
 
-1. 左メニューの **Zero Trust** → **Overview** で初期設定（支払い方法の登録を求められます。チーム名は自動で付きます）
+1. Zero Trust の初期設定が済んでいることを確認（事前準備。まだなら左メニューの **Zero Trust** → **Overview** から。支払い方法の登録を求められ、チーム名は自動で付きます）
 2. Compute → Workers & Pages → **`honobono-diary-admin`**（公開サイトではなく管理画面の方）→ **Access** タブ
 3. Scope：**All traffic**（既定の Previews only では本番の URL が守られない）
 4. Authentication policy：Add policy → **Cloudflare account**（この Cloudflare アカウントのメンバー＝自分だけが入れる）
